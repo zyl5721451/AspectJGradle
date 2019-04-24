@@ -1,0 +1,17 @@
+apply plugin: 'groovy'
+
+repositories {
+    mavenLocal()
+    jcenter()
+    google()
+}
+
+dependencies {
+    implementation gradleApi()
+    implementation localGroovy()
+    implementation fileTree(dir: 'libs', include: ['*.jar'])
+
+    implementation 'com.android.tools.build:gradle:3.2.1'
+//    implementation 'org.aspectj:aspectjrt:1.8.7'
+
+}
