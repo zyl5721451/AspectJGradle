@@ -73,14 +73,13 @@ public class HyAjTransform extends Transform {
             return
         }
         if(transformInvocation.incremental) {
-            transformInvocation.inputs.each {
-                boolean hasAspect = updateAspectClass(it,ajConstant)
-                if(!hasAspect) {
-                    super.transform(transformInvocation)
-                    return
-                }
-                updateInputFiles(transformInvocation,it,ajConstant,ajExtension)
+            boolean hasAspect = updateAspectClass(transformInvocation,ajConstant)
+            if(!hasAspect) {
+                super.transform(transformInvocation)
+                return
             }
+            println("---------hasAspectClass---incremental------")
+            updateInputFiles(transformInvocation,ajConstant,ajExtension)
 
             if(ajConstant.aspectjClassChange||ajConstant.isIncludeFileChanged) {
                 File directoryDes = transformInvocation.outputProvider.getContentLocation(AJ_DIRECTORY_INCLUDE, ajConstant.directoryIncludeContentTypes, ajConstant.directoryIncludeScopes, Format.JAR)
@@ -90,20 +89,17 @@ public class HyAjTransform extends Transform {
                 aspectjProcess(project, ajConstant.aspectPathList, inPath, ajConstant.classPathList, directoryDes.absolutePath)
             }
 
-            transformInvocation.inputs.each {
-                doUpdateAspect(transformInvocation,it, ajConstant,ajExtension)
-            }
+            doUpdateAspect(transformInvocation, ajConstant,ajExtension)
 
         }else {
             transformInvocation.outputProvider.deleteAll()
-            transformInvocation.inputs.each {
-                boolean hasAspect = cacheAspectClass(it,ajConstant)
-                if(hasAspect) {
-                    super.transform(transformInvocation)
-                    return
-                }
-                copyExcludeClass(transformInvocation,it,ajConstant,ajExtension)
+            boolean hasAspect = cacheAspectClass(transformInvocation,ajConstant)
+            if(!hasAspect) {
+                super.transform(transformInvocation)
+                return
             }
+            println("---------hasAspectClass----full-----")
+            copyExcludeClass(transformInvocation,ajConstant,ajExtension)
 
             File directoryDes = transformInvocation.outputProvider.getContentLocation(AJ_DIRECTORY_INCLUDE, ajConstant.directoryIncludeContentTypes, ajConstant.directoryIncludeScopes, Format.JAR)
 
@@ -124,99 +120,100 @@ public class HyAjTransform extends Transform {
 //            println("-------doWorkContinuously---aspectPath-----"+ajConstant.aspectPathList.toString())
 //            println("-------doWorkContinuously---classPath----"+ajConstant.classPathList.toString())
 
-            transformInvocation.inputs.each {
-                doaspect(transformInvocation,it, ajConstant,ajExtension)
-            }
+            doaspect(transformInvocation, ajConstant,ajExtension)
 
 
         }
     }
 
-    private void doUpdateAspect(TransformInvocation transformInvocation,TransformInput it,HyAjConstant ajConstant,HyAjExtension ajExtension) {
-        it.jarInputs.each {JarInput jarInput ->
-            if(jarInput.status != Status.NOTCHANGED) {
+    private void doUpdateAspect(TransformInvocation transformInvocation,HyAjConstant ajConstant,HyAjExtension ajExtension) {
+       transformInvocation.inputs.each {
+           it.jarInputs.each {JarInput jarInput ->
+               if(jarInput.status != Status.NOTCHANGED) {
 
-                if(jarInput.status == Status.CHANGED||jarInput.status == Status.ADDED) {
+                   if(jarInput.status == Status.CHANGED||jarInput.status == Status.ADDED) {
 
-                    JarFile jarFile = new JarFile(jarInput.file)
-                    Enumeration<JarEntry> entries = jarFile.entries()
-                    boolean include = true
-                    while (entries.hasMoreElements()) {
-                        JarEntry jarEntry = entries.nextElement()
-                        String entryName = jarEntry.name
-                        String transEntryName = entryName.replace(File.separator, ".")
-                        boolean exclude = excludeFile(ajExtension, transEntryName)
-                        if (exclude) {
-                            include = false
-                            break
-                        }
+                       JarFile jarFile = new JarFile(jarInput.file)
+                       Enumeration<JarEntry> entries = jarFile.entries()
+                       boolean include = true
+                       while (entries.hasMoreElements()) {
+                           JarEntry jarEntry = entries.nextElement()
+                           String entryName = jarEntry.name
+                           String transEntryName = entryName.replace(File.separator, ".")
+                           boolean exclude = excludeFile(ajExtension, transEntryName)
+                           if (exclude) {
+                               include = false
+                               break
+                           }
+                       }
+                       if (include) {
+                           File includeJar = transformInvocation.outputProvider.getContentLocation(jarInput.name, jarInput.contentTypes, jarInput.scopes, Format.JAR)
+                           if(ajConstant.aspectjClassChange) {
+                               ArrayList<File> inPath2 = new ArrayList<>()
+                               inPath2.add(jarInput.file)
+                               FileUtils.deleteQuietly(includeJar)
+                               if (!includeJar.getParentFile()?.exists()) {
+                                   includeJar.getParentFile()?.mkdirs()
+                               }
+
+                               aspectjProcess(project, ajConstant.aspectPathList, inPath2, ajConstant.classPathList, includeJar.absolutePath)
+                           }else {
+                               if(!includeJar.exists()) {
+                                   ArrayList<File> inPath2 = new ArrayList<>()
+                                   inPath2.add(jarInput.file)
+                                   if (!includeJar.getParentFile()?.exists()) {
+                                       includeJar.getParentFile()?.mkdirs()
+                                   }
+                                   aspectjProcess(project, ajConstant.aspectPathList, inPath2, ajConstant.classPathList, includeJar.absolutePath)
+                               }
+                           }
+
+                       }
+
+
+                   }
+
+
+
+               }
+           }
+       }
+
+    }
+
+    private void doaspect(TransformInvocation transformInvocation,HyAjConstant ajConstant,HyAjExtension ajExtension) {
+        transformInvocation.inputs.each {
+
+            it.jarInputs.each { jarInput ->
+                JarFile jarFile = new JarFile(jarInput.file)
+                Enumeration<JarEntry> entries = jarFile.entries()
+                boolean include = true
+                while (entries.hasMoreElements()) {
+                    JarEntry jarEntry = entries.nextElement()
+                    String entryName = jarEntry.name
+                    String transEntryName = entryName.replace(File.separator, ".")
+                    boolean exclude = excludeFile(ajExtension, transEntryName)
+                    if (exclude) {
+                        include = false
+                        break
                     }
-                    if (include) {
-                        File includeJar = transformInvocation.outputProvider.getContentLocation(jarInput.name, jarInput.contentTypes, jarInput.scopes, Format.JAR)
-                        if(ajConstant.aspectjClassChange) {
-                            ArrayList<File> inPath2 = new ArrayList<>()
-                            inPath2.add(jarInput.file)
-                            FileUtils.deleteQuietly(includeJar)
-                            if (!includeJar.getParentFile()?.exists()) {
-                                includeJar.getParentFile()?.mkdirs()
-                            }
+                }
+                if (include) {
+                    ArrayList<File> inPath2 = new ArrayList<>()
+                    inPath2.add(jarInput.file)
+                    File includeJar = transformInvocation.outputProvider.getContentLocation(jarInput.name, jarInput.contentTypes, jarInput.scopes, Format.JAR)
 
-                            aspectjProcess(project, ajConstant.aspectPathList, inPath2, ajConstant.classPathList, includeJar.absolutePath)
-                        }else {
-                            if(!includeJar.exists()) {
-                                ArrayList<File> inPath2 = new ArrayList<>()
-                                inPath2.add(jarInput.file)
-                                if (!includeJar.getParentFile()?.exists()) {
-                                    includeJar.getParentFile()?.mkdirs()
-                                }
-                                aspectjProcess(project, ajConstant.aspectPathList, inPath2, ajConstant.classPathList, includeJar.absolutePath)
-                            }
-                        }
-
+                    if (!includeJar.getParentFile()?.exists()) {
+                        includeJar.getParentFile()?.mkdirs()
                     }
 
-
+                    aspectjProcess(project, ajConstant.aspectPathList, inPath2, ajConstant.classPathList, includeJar.absolutePath)
                 }
-
-
-
-            }
-        }
-
-    }
-
-    private void doaspect(TransformInvocation transformInvocation,TransformInput it,HyAjConstant ajConstant,HyAjExtension ajExtension) {
-
-
-        it.jarInputs.each { jarInput ->
-            JarFile jarFile = new JarFile(jarInput.file)
-            Enumeration<JarEntry> entries = jarFile.entries()
-            boolean include = true
-            while (entries.hasMoreElements()) {
-                JarEntry jarEntry = entries.nextElement()
-                String entryName = jarEntry.name
-                String transEntryName = entryName.replace(File.separator, ".")
-                boolean exclude = excludeFile(ajExtension, transEntryName)
-                if (exclude) {
-                    include = false
-                    break
-                }
-            }
-            if (include) {
-                ArrayList<File> inPath2 = new ArrayList<>()
-                inPath2.add(jarInput.file)
-                File includeJar = transformInvocation.outputProvider.getContentLocation(jarInput.name, jarInput.contentTypes, jarInput.scopes, Format.JAR)
-
-                if (!includeJar.getParentFile()?.exists()) {
-                    includeJar.getParentFile()?.mkdirs()
-                }
-
-                aspectjProcess(project, ajConstant.aspectPathList, inPath2, ajConstant.classPathList, includeJar.absolutePath)
             }
         }
     }
 
-    private void updateInputFiles(TransformInvocation transformInvocation,TransformInput it,HyAjConstant ajConstant,HyAjExtension ajExtension) {
+    private void updateInputFiles(TransformInvocation transformInvocation,HyAjConstant ajConstant,HyAjExtension ajExtension) {
         it.directoryInputs.each { DirectoryInput dirInput ->
             dirInput.changedFiles.each {File file,Status status ->
                 String path = file.absolutePath
@@ -296,76 +293,76 @@ public class HyAjTransform extends Transform {
 
     }
 
-    private void copyExcludeClass(TransformInvocation transformInvocation,TransformInput it,HyAjConstant ajConstant,HyAjExtension ajExtension) {
+    private void copyExcludeClass(TransformInvocation transformInvocation,HyAjConstant ajConstant,HyAjExtension ajExtension) {
+        transformInvocation.inputs.each {
+            it.directoryInputs.each {dirInput ->
+                dirInput.file.eachFileRecurse { file ->
+                    if(HyAjUtil.isClassFile(file)){
+                        String path = file.absolutePath
+                        String subPath = path.substring(dirInput.file.absolutePath.length())
+                        String transPath = subPath.replace(File.separator,".")
+                        boolean include = !excludeFile(ajExtension,transPath)
 
-        it.directoryInputs.each {dirInput ->
-            dirInput.file.eachFileRecurse { file ->
-                if(HyAjUtil.isClassFile(file)){
-                    String path = file.absolutePath
-                    String subPath = path.substring(dirInput.file.absolutePath.length())
-                    String transPath = subPath.replace(File.separator,".")
-                    boolean include = !excludeFile(ajExtension,transPath)
 
-
-                    if(include) {
-                        File includeDirectory = new File(ajConstant.includeFilePath+subPath)
-                        if(!includeDirectory.getParentFile()?.exists()) {
-                            includeDirectory.getParentFile()?.mkdirs()
+                        if(include) {
+                            File includeDirectory = new File(ajConstant.includeFilePath+subPath)
+                            if(!includeDirectory.getParentFile()?.exists()) {
+                                includeDirectory.getParentFile()?.mkdirs()
+                            }
+                            FileUtils.copyFile(file,includeDirectory)
+                        }else {
+                            File exludeDirectory = new File(ajConstant.excludeFilePath+subPath)
+                            if(!exludeDirectory.getParentFile()?.exists()) {
+                                exludeDirectory.getParentFile()?.mkdirs()
+                            }
+                            FileUtils.copyFile(file,exludeDirectory)
                         }
-                        FileUtils.copyFile(file,includeDirectory)
-                    }else {
-                        File exludeDirectory = new File(ajConstant.excludeFilePath+subPath)
-                        if(!exludeDirectory.getParentFile()?.exists()) {
-                            exludeDirectory.getParentFile()?.mkdirs()
-                        }
-                        FileUtils.copyFile(file,exludeDirectory)
                     }
                 }
-            }
 
-            //put exclude files into jar
-            if (HyAjUtil.countOfFiles(new File(ajConstant.excludeFilePath)) > 0) {
-                File excludeJar = transformInvocation.getOutputProvider().getContentLocation(TRANS_DIRECTORY_EXCLUDE, ajConstant.directoryIncludeContentTypes,
-                        ajConstant.directoryIncludeScopes, Format.JAR)
-                mergeJar(new File(ajConstant.excludeFilePath), excludeJar)
-            }
+                //put exclude files into jar
+                if (HyAjUtil.countOfFiles(new File(ajConstant.excludeFilePath)) > 0) {
+                    File excludeJar = transformInvocation.getOutputProvider().getContentLocation(TRANS_DIRECTORY_EXCLUDE, ajConstant.directoryIncludeContentTypes,
+                            ajConstant.directoryIncludeScopes, Format.JAR)
+                    mergeJar(new File(ajConstant.excludeFilePath), excludeJar)
+                }
 
 
 //            if(HyAjUtil.countOfFiles(new File(ajConstant.excludeFilePath))>0) {
 //                File directoryDes = transformInvocation.outputProvider.getContentLocation("excludess",dirInput.contentTypes,dirInput.scopes,Format.JAR)
 //                mergeJar(new File(ajConstant.excludeFilePath),directoryDes)
 //            }
-        }
+            }
 
 
 
-        it.jarInputs.each { jarInput->
-            JarFile jarFile = new JarFile(jarInput.file)
-            Enumeration<JarEntry> entries = jarFile.entries()
-            boolean include = true
-            while (entries.hasMoreElements()){
-                JarEntry jarEntry = entries.nextElement()
-                String entryName = jarEntry.name
-                String transEntryName = entryName.replace(File.separator,".")
-                boolean exclude = excludeFile(ajExtension,transEntryName)
-                if(exclude) {
-                    include = false
-                    break
+            it.jarInputs.each { jarInput->
+                JarFile jarFile = new JarFile(jarInput.file)
+                Enumeration<JarEntry> entries = jarFile.entries()
+                boolean include = true
+                while (entries.hasMoreElements()){
+                    JarEntry jarEntry = entries.nextElement()
+                    String entryName = jarEntry.name
+                    String transEntryName = entryName.replace(File.separator,".")
+                    boolean exclude = excludeFile(ajExtension,transEntryName)
+                    if(exclude) {
+                        include = false
+                        break
+                    }
                 }
+                if(!include) {
+                    File excludeJar = transformInvocation.outputProvider.getContentLocation(jarInput.name,jarInput.contentTypes,jarInput.scopes,Format.JAR)
+                    FileUtils.copyFile(jarInput.file,excludeJar)
+                }
+                ajConstant.classPathList.add(jarInput.file.absolutePath)
             }
-            if(!include) {
-                File excludeJar = transformInvocation.outputProvider.getContentLocation(jarInput.name,jarInput.contentTypes,jarInput.scopes,Format.JAR)
-                FileUtils.copyFile(jarInput.file,excludeJar)
-            }
-            ajConstant.classPathList.add(jarInput.file.absolutePath)
         }
-
-
     }
 
-    private boolean updateAspectClass(TransformInput it,HyAjConstant ajConstant){
-        it.directoryInputs.each { dirInput ->
-            dirInput.changedFiles.each { File file,Status status ->
+    private boolean updateAspectClass(TransformInvocation invocation,HyAjConstant ajConstant){
+        invocation.inputs.each { it ->
+            it.directoryInputs.each { dirInput ->
+                dirInput.changedFiles.each { File file,Status status ->
                     if(HyAjUtil.isAspectClass(file)) {
                         ajConstant.aspectjClassChange = true
                         String path = file.absolutePath
@@ -385,74 +382,78 @@ public class HyAjTransform extends Transform {
                         }
                     }
 
+                }
+
             }
 
-        }
-
-        it.jarInputs.each {JarInput jarInput ->
-            if(jarInput.status != Status.NOTCHANGED) {
-                JarFile jarFile = new JarFile(jarInput.file)
-                Enumeration<JarEntry> jarEntryEnumeration = jarFile.entries()
-                while (jarEntryEnumeration.hasMoreElements()) {
-                    JarEntry jarEntry = jarEntryEnumeration.nextElement()
-                    String entryName = jarEntry.name
-                    if(!jarEntry.isDirectory()&&HyAjUtil.isClassFile(entryName)) {
-                        byte[] bytes = ByteStreams.toByteArray(jarFile.getInputStream(jarEntry))
-                        File cacheFile = new File(ajConstant.aspectPath + File.separator + entryName)
-                        if(HyAjUtil.isAspectClass(bytes)) {
-                            ajConstant.aspectjClassChange = true
-                            if(jarInput.status == Status.REMOVED) {
-                                FileUtils.deleteQuietly(cacheFile)
-                            }else if(jarInput.status == Status.ADDED) {
-                                FileUtils.copyFile(jarInput.file,cacheFile)
-                            }else if(jarInput.status == Status.CHANGED) {
-                                FileUtils.deleteQuietly(cacheFile)
-                                FileUtils.copyFile(jarInput.file,cacheFile)
+            it.jarInputs.each {JarInput jarInput ->
+                if(jarInput.status != Status.NOTCHANGED) {
+                    JarFile jarFile = new JarFile(jarInput.file)
+                    Enumeration<JarEntry> jarEntryEnumeration = jarFile.entries()
+                    while (jarEntryEnumeration.hasMoreElements()) {
+                        JarEntry jarEntry = jarEntryEnumeration.nextElement()
+                        String entryName = jarEntry.name
+                        if(!jarEntry.isDirectory()&&HyAjUtil.isClassFile(entryName)) {
+                            byte[] bytes = ByteStreams.toByteArray(jarFile.getInputStream(jarEntry))
+                            File cacheFile = new File(ajConstant.aspectPath + File.separator + entryName)
+                            if(HyAjUtil.isAspectClass(bytes)) {
+                                ajConstant.aspectjClassChange = true
+                                if(jarInput.status == Status.REMOVED) {
+                                    FileUtils.deleteQuietly(cacheFile)
+                                }else if(jarInput.status == Status.ADDED) {
+                                    FileUtils.copyFile(jarInput.file,cacheFile)
+                                }else if(jarInput.status == Status.CHANGED) {
+                                    FileUtils.deleteQuietly(cacheFile)
+                                    FileUtils.copyFile(jarInput.file,cacheFile)
+                                }
                             }
                         }
+                    }
+                    jarFile.close()
+                }
+
+            }
+        }
+        return HyAjUtil.countOfFiles(ajConstant.aspectFileDir)>0
+    }
+
+    private boolean cacheAspectClass(TransformInvocation invocation,HyAjConstant ajConstant) {
+        invocation.inputs.each {
+            it.jarInputs.each { jarInput ->
+                JarFile jarFile = new JarFile(jarInput.file)
+                Enumeration<JarEntry> entries = jarFile.entries()
+                while (entries.hasMoreElements()) {
+                    JarEntry jarEntry = entries.nextElement()
+                    String entryName = jarEntry.name
+                    byte[] bytes = ByteStreams.toByteArray(jarFile.getInputStream(jarEntry))
+                    if (!jarEntry.isDirectory() && HyAjUtil.isClassFile(entryName) && HyAjUtil.isAspectClass(bytes)) {
+                        File cacheFile = new File(ajConstant.aspectPath + File.separator + entryName)
+                        if(!cacheFile.parentFile.exists()) {
+                            cacheFile.parentFile.mkdirs()
+                        }
+                        FileUtils.copyFile(jarInput.file, cacheFile)
                     }
                 }
                 jarFile.close()
             }
 
-        }
-        return HyAjUtil.countOfFiles(ajConstant.aspectFileDir)>0
-    }
-
-    private boolean cacheAspectClass(TransformInput it,HyAjConstant ajConstant) {
-        it.jarInputs.each { jarInput ->
-            JarFile jarFile = new JarFile(jarInput.file)
-            Enumeration<JarEntry> entries = jarFile.entries()
-            while (entries.hasMoreElements()) {
-                JarEntry jarEntry = entries.nextElement()
-                String entryName = jarEntry.name
-                byte[] bytes = ByteStreams.toByteArray(jarFile.getInputStream(jarEntry))
-                if (!jarEntry.isDirectory() && HyAjUtil.isClassFile(entryName) && HyAjUtil.isAspectClass(bytes)) {
-                    File cacheFile = new File(ajConstant.aspectPath + File.separator + entryName)
-                    if(!cacheFile.parentFile.exists()) {
-                        cacheFile.parentFile.mkdirs()
-                    }
-                    FileUtils.copyFile(jarInput.file, cacheFile)
-                }
-            }
-            jarFile.close()
-        }
-
-        it.directoryInputs.each { dirInput ->
-            dirInput.file.eachFileRecurse { file ->
-                if (HyAjUtil.isClassFile(file)) {
-                    String path = file.absolutePath
-                    String subPath = path.substring(dirInput.file.absolutePath.length())
-                    if (HyAjUtil.isAspectClass(file)) {
-                        File cacheFile = new File(ajConstant.aspectPath + subPath)
-                        if(!cacheFile.parentFile.exists()) {
-                            cacheFile.parentFile.mkdirs()
+            it.directoryInputs.each { dirInput ->
+                dirInput.file.eachFileRecurse { file ->
+                    if (HyAjUtil.isClassFile(file)) {
+                        String path = file.absolutePath
+                        String subPath = path.substring(dirInput.file.absolutePath.length())
+                        if (HyAjUtil.isAspectClass(file)) {
+                            File cacheFile = new File(ajConstant.aspectPath + subPath)
+                            if(!cacheFile.parentFile.exists()) {
+                                cacheFile.parentFile.mkdirs()
+                            }
+                            FileUtils.copyFile(file, cacheFile)
                         }
-                        FileUtils.copyFile(file, cacheFile)
                     }
                 }
             }
         }
+
 
         return HyAjUtil.countOfFiles(ajConstant.aspectFileDir)>0
     }
@@ -475,10 +476,10 @@ public class HyAjTransform extends Transform {
 
 
 
-//        println("------aspectjProcess-------"+getStrJoint(inFilePath))
-//        println("------aspectjProcess-------"+getStrJoint(classFilePath))
-//        println("------aspectjProcess-------"+getStrJoint(aspectFilePath))
-//        println("------aspectjProcess-------"+project.android.bootClasspath.join(File.pathSeparator))
+        println("------aspectjProcess-------"+getStrJoint(inFilePath))
+        println("------aspectjProcess-------"+getStrJoint(classFilePath))
+        println("------aspectjProcess-------"+getStrJoint(aspectFilePath))
+        println("------aspectjProcess-------"+project.android.bootClasspath.join(File.pathSeparator))
 
         String[] args = [
                 "-showWeaveInfo",

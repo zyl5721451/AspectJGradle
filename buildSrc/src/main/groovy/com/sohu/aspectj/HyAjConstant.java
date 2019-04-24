@@ -30,7 +30,7 @@ public class HyAjConstant {
     public ArrayList<String> aspectPathList = new ArrayList<>();
 
     Set<QualifiedContent.ContentType> directoryIncludeContentTypes = TransformManager.CONTENT_CLASS;
-    Set<QualifiedContent.Scope> directoryIncludeScopes = Sets.immutableEnumSet(QualifiedContent.Scope.EXTERNAL_LIBRARIES);
+    Set<QualifiedContent.Scope> directoryIncludeScopes = TransformManager.SCOPE_FULL_PROJECT;
 
     public HyAjConstant(Project project,String variantName) {
         this.project = project;
