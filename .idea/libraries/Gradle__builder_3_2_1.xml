@@ -1,0 +1,11 @@
+<component name="libraryTable">
+  <library name="Gradle: builder-3.2.1">
+    <CLASSES>
+      <root url="jar://$APPLICATION_HOME_DIR$/gradle/m2repository/com/android/tools/build/builder/3.2.1/builder-3.2.1.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES>
+      <root url="jar://$APPLICATION_HOME_DIR$/gradle/m2repository/com/android/tools/build/builder/3.2.1/builder-3.2.1-sources.jar!/" />
+    </SOURCES>
+  </library>
+</component>
