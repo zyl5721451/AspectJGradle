@@ -87,8 +87,9 @@ public class HyAjTransform extends Transform {
                 ArrayList<String> inPath = new ArrayList<>()
                 inPath.add(ajConstant.includeFilePath)
                 aspectjProcess(project, ajConstant.aspectPathList, inPath, ajConstant.classPathList, directoryDes.absolutePath)
+                println("---------updateInspect--dirinclude----")
             }
-
+//
             doUpdateAspect(transformInvocation, ajConstant,ajExtension)
 
         }else {
@@ -129,54 +130,44 @@ public class HyAjTransform extends Transform {
     private void doUpdateAspect(TransformInvocation transformInvocation,HyAjConstant ajConstant,HyAjExtension ajExtension) {
        transformInvocation.inputs.each {
            it.jarInputs.each {JarInput jarInput ->
-               if(jarInput.status != Status.NOTCHANGED) {
 
-                   if(jarInput.status == Status.CHANGED||jarInput.status == Status.ADDED) {
-
-                       JarFile jarFile = new JarFile(jarInput.file)
-                       Enumeration<JarEntry> entries = jarFile.entries()
-                       boolean include = true
-                       while (entries.hasMoreElements()) {
-                           JarEntry jarEntry = entries.nextElement()
-                           String entryName = jarEntry.name
-                           String transEntryName = entryName.replace(File.separator, ".")
-                           boolean exclude = excludeFile(ajExtension, transEntryName)
-                           if (exclude) {
-                               include = false
-                               break
-                           }
+                   JarFile jarFile = new JarFile(jarInput.file)
+                   Enumeration<JarEntry> entries = jarFile.entries()
+                   boolean include = true
+                   while (entries.hasMoreElements()) {
+                       JarEntry jarEntry = entries.nextElement()
+                       String entryName = jarEntry.name
+                       String transEntryName = entryName.replace(File.separator, ".")
+                       boolean exclude = excludeFile(ajExtension, transEntryName)
+                       if (exclude) {
+                           include = false
+                           break
                        }
-                       if (include) {
-                           File includeJar = transformInvocation.outputProvider.getContentLocation(jarInput.name, jarInput.contentTypes, jarInput.scopes, Format.JAR)
-                           if(ajConstant.aspectjClassChange) {
+                   }
+                   if (include) {
+                       File includeJar = transformInvocation.outputProvider.getContentLocation(jarInput.name, jarInput.contentTypes, jarInput.scopes, Format.JAR)
+                       if(ajConstant.aspectjClassChange) {
+                           ArrayList<File> inPath2 = new ArrayList<>()
+                           inPath2.add(jarInput.file)
+                           FileUtils.deleteQuietly(includeJar)
+                           if (!includeJar.getParentFile()?.exists()) {
+                               includeJar.getParentFile()?.mkdirs()
+                           }
+
+                           aspectjProcess(project, ajConstant.aspectPathList, inPath2, ajConstant.classPathList, includeJar.absolutePath)
+                       }else {
+                           if(!includeJar.exists()) {
                                ArrayList<File> inPath2 = new ArrayList<>()
                                inPath2.add(jarInput.file)
-                               FileUtils.deleteQuietly(includeJar)
                                if (!includeJar.getParentFile()?.exists()) {
                                    includeJar.getParentFile()?.mkdirs()
                                }
-
                                aspectjProcess(project, ajConstant.aspectPathList, inPath2, ajConstant.classPathList, includeJar.absolutePath)
-                           }else {
-                               if(!includeJar.exists()) {
-                                   ArrayList<File> inPath2 = new ArrayList<>()
-                                   inPath2.add(jarInput.file)
-                                   if (!includeJar.getParentFile()?.exists()) {
-                                       includeJar.getParentFile()?.mkdirs()
-                                   }
-                                   aspectjProcess(project, ajConstant.aspectPathList, inPath2, ajConstant.classPathList, includeJar.absolutePath)
-                               }
                            }
-
                        }
 
-
                    }
-
-
-
                }
-           }
        }
 
     }
@@ -228,6 +219,7 @@ public class HyAjTransform extends Transform {
                         ajConstant.isExcludeFileChanged = !include
                     }
                     File target = new File((include?ajConstant.includeFilePath:ajConstant.excludeFilePath)+subPath)
+
                     switch (status) {
                         case Status.CHANGED:
                             FileUtils.deleteQuietly(target)
@@ -244,6 +236,7 @@ public class HyAjTransform extends Transform {
                     if(ajConstant.isIncludeFileChanged) {
                         File directoryDes = transformInvocation.outputProvider.getContentLocation(AJ_DIRECTORY_INCLUDE, ajConstant.directoryIncludeContentTypes, ajConstant.directoryIncludeScopes, Format.JAR)
                         FileUtils.deleteQuietly(directoryDes)
+                        println("---------deleteInclude-----------"+directoryDes)
                     }
 
                     if(ajConstant.isExcludeFileChanged) {
@@ -251,24 +244,16 @@ public class HyAjTransform extends Transform {
                                 ajConstant.directoryIncludeScopes, Format.JAR)
                         FileUtils.deleteQuietly(excludeJar)
                         mergeJar(new File(ajConstant.excludeFilePath), excludeJar)
+                        println("---------deleteExclude-----------"+excludeJar)
                     }
                 }
             }
 
             it.jarInputs.each {JarInput jarInput ->
+                ajConstant.classPathList.add(jarInput.file.absolutePath)
                 if(jarInput.status != Status.NOTCHANGED) {
                     String filePath = jarInput.file.absolutePath
                     File outputJar = transformInvocation.outputProvider.getContentLocation(jarInput.name, jarInput.contentTypes, jarInput.scopes, Format.JAR)
-                    if(jarInput.status == Status.CHANGED) {
-                        FileUtils.deleteQuietly(outputJar)
-                        ajConstant.classPathList.add(jarInput.file.absolutePath)
-                    }else if(jarInput.status == Status.ADDED) {
-                        ajConstant.classPathList.add(jarInput.file.absolutePath)
-
-                    }else if(jarInput.status == Status.REMOVED) {
-                        FileUtils.deleteQuietly(outputJar)
-                        ajConstant.classPathList.remove(jarInput.file.absolutePath)
-                    }
 
                     JarFile jarFile = new JarFile(jarInput.file)
                     Enumeration<JarEntry> entries = jarFile.entries()
@@ -285,10 +270,16 @@ public class HyAjTransform extends Transform {
                     }
 
                     if(!include) {
-                        FileUtils.copyFile(jarInput.file,outputJar)
+                        if(jarInput.status == Status.CHANGED) {
+                            FileUtils.deleteQuietly(outputJar)
+                            FileUtils.copyFile(jarInput.file,outputJar)
+                        }else if(jarInput.status == Status.ADDED) {
+                            FileUtils.copyFile(jarInput.file,outputJar)
+                        }else if(jarInput.status == Status.REMOVED) {
+                            FileUtils.deleteQuietly(outputJar)
+                            ajConstant.classPathList.remove(jarInput.file.absolutePath)
+                        }
                     }
-
-
                 }
             }
         }
