@@ -72,10 +72,10 @@ public class SampleAspect {
 
 
 
-    @Before("activityOnCreate()")
-    public void onCreateBefore(JoinPoint joinPoint) {
-        Log.d("chao", "onCreateAdvice" + joinPoint.getSignature().getDeclaringType() + ":" + joinPoint.getSignature().getDeclaringTypeName());
-    }
+//    @Before("activityOnCreate()")
+//    public void onCreateBefore(JoinPoint joinPoint) {
+//        Log.d("chao", "onCreateAdvice" + joinPoint.getSignature().getDeclaringType() + ":" + joinPoint.getSignature().getDeclaringTypeName());
+//    }
 //    @After("activityOnCreate()")
 //    public void onCreateAfter(JoinPoint joinPoint) {
 //        Log.d("chao", "onCreateAdvice" + joinPoint.getSignature().getDeclaringType() + ":" + joinPoint.getSignature().getDeclaringTypeName());

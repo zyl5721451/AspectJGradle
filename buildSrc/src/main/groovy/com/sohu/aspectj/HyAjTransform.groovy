@@ -214,82 +214,85 @@ public class HyAjTransform extends Transform {
     }
 
     private void updateInputFiles(TransformInvocation transformInvocation,HyAjConstant ajConstant,HyAjExtension ajExtension) {
-        it.directoryInputs.each { DirectoryInput dirInput ->
-            dirInput.changedFiles.each {File file,Status status ->
-                String path = file.absolutePath
-                String subPath = path.substring(dirInput.file.absolutePath.length())
-                String transPath = subPath.replace(File.separator,".")
-                boolean include = !excludeFile(ajExtension,transPath)
-                if(!ajConstant.isIncludeFileChanged&&include) {
-                    ajConstant.isIncludeFileChanged = include
-                }
-                if(!ajConstant.isExcludeFileChanged&&!include) {
-                    ajConstant.isExcludeFileChanged = !include
-                }
-                File target = new File((include?ajConstant.includeFilePath:ajConstant.excludeFilePath)+subPath)
-                switch (status) {
-                    case Status.CHANGED:
-                        FileUtils.deleteQuietly(target)
-                        FileUtils.copyFile(file,target)
-                        break
-                    case Status.ADDED:
-                        FileUtils.copyFile(file,target)
-                        break
-                    case Status.REMOVED:
-                        FileUtils.deleteQuietly(target)
-                        break
-                }
+        transformInvocation.inputs.each {
+            it.directoryInputs.each { DirectoryInput dirInput ->
+                dirInput.changedFiles.each {File file,Status status ->
+                    String path = file.absolutePath
+                    String subPath = path.substring(dirInput.file.absolutePath.length())
+                    String transPath = subPath.replace(File.separator,".")
+                    boolean include = !excludeFile(ajExtension,transPath)
+                    if(!ajConstant.isIncludeFileChanged&&include) {
+                        ajConstant.isIncludeFileChanged = include
+                    }
+                    if(!ajConstant.isExcludeFileChanged&&!include) {
+                        ajConstant.isExcludeFileChanged = !include
+                    }
+                    File target = new File((include?ajConstant.includeFilePath:ajConstant.excludeFilePath)+subPath)
+                    switch (status) {
+                        case Status.CHANGED:
+                            FileUtils.deleteQuietly(target)
+                            FileUtils.copyFile(file,target)
+                            break
+                        case Status.ADDED:
+                            FileUtils.copyFile(file,target)
+                            break
+                        case Status.REMOVED:
+                            FileUtils.deleteQuietly(target)
+                            break
+                    }
 
-                if(ajConstant.isIncludeFileChanged) {
-                    File directoryDes = transformInvocation.outputProvider.getContentLocation(AJ_DIRECTORY_INCLUDE, ajConstant.directoryIncludeContentTypes, ajConstant.directoryIncludeScopes, Format.JAR)
-                    FileUtils.deleteQuietly(directoryDes)
-                }
+                    if(ajConstant.isIncludeFileChanged) {
+                        File directoryDes = transformInvocation.outputProvider.getContentLocation(AJ_DIRECTORY_INCLUDE, ajConstant.directoryIncludeContentTypes, ajConstant.directoryIncludeScopes, Format.JAR)
+                        FileUtils.deleteQuietly(directoryDes)
+                    }
 
-                if(ajConstant.isExcludeFileChanged) {
-                    File excludeJar = transformInvocation.getOutputProvider().getContentLocation(TRANS_DIRECTORY_EXCLUDE, ajConstant.directoryIncludeContentTypes,
-                            ajConstant.directoryIncludeScopes, Format.JAR)
-                    FileUtils.deleteQuietly(excludeJar)
-                    mergeJar(new File(ajConstant.excludeFilePath), excludeJar)
-                }
-            }
-        }
-
-        it.jarInputs.each {JarInput jarInput ->
-            if(jarInput.status != Status.NOTCHANGED) {
-                String filePath = jarInput.file.absolutePath
-                File outputJar = transformInvocation.outputProvider.getContentLocation(jarInput.name, jarInput.contentTypes, jarInput.scopes, Format.JAR)
-                if(jarInput.status == Status.CHANGED) {
-                    FileUtils.deleteQuietly(outputJar)
-                    ajConstant.classPathList.add(jarInput.file.absolutePath)
-                }else if(jarInput.status == Status.ADDED) {
-                    ajConstant.classPathList.add(jarInput.file.absolutePath)
-
-                }else if(jarInput.status == Status.REMOVED) {
-                    FileUtils.deleteQuietly(outputJar)
-                    ajConstant.classPathList.remove(jarInput.file.absolutePath)
-                }
-
-                JarFile jarFile = new JarFile(jarInput.file)
-                Enumeration<JarEntry> entries = jarFile.entries()
-                boolean include = true
-                while (entries.hasMoreElements()){
-                    JarEntry jarEntry = entries.nextElement()
-                    String entryName = jarEntry.name
-                    String transEntryName = entryName.replace(File.separator,".")
-                    boolean exclude = excludeFile(ajExtension,transEntryName)
-                    if(exclude) {
-                        include = false
-                        break
+                    if(ajConstant.isExcludeFileChanged) {
+                        File excludeJar = transformInvocation.getOutputProvider().getContentLocation(TRANS_DIRECTORY_EXCLUDE, ajConstant.directoryIncludeContentTypes,
+                                ajConstant.directoryIncludeScopes, Format.JAR)
+                        FileUtils.deleteQuietly(excludeJar)
+                        mergeJar(new File(ajConstant.excludeFilePath), excludeJar)
                     }
                 }
+            }
 
-                if(!include) {
-                    FileUtils.copyFile(jarInput.file,outputJar)
+            it.jarInputs.each {JarInput jarInput ->
+                if(jarInput.status != Status.NOTCHANGED) {
+                    String filePath = jarInput.file.absolutePath
+                    File outputJar = transformInvocation.outputProvider.getContentLocation(jarInput.name, jarInput.contentTypes, jarInput.scopes, Format.JAR)
+                    if(jarInput.status == Status.CHANGED) {
+                        FileUtils.deleteQuietly(outputJar)
+                        ajConstant.classPathList.add(jarInput.file.absolutePath)
+                    }else if(jarInput.status == Status.ADDED) {
+                        ajConstant.classPathList.add(jarInput.file.absolutePath)
+
+                    }else if(jarInput.status == Status.REMOVED) {
+                        FileUtils.deleteQuietly(outputJar)
+                        ajConstant.classPathList.remove(jarInput.file.absolutePath)
+                    }
+
+                    JarFile jarFile = new JarFile(jarInput.file)
+                    Enumeration<JarEntry> entries = jarFile.entries()
+                    boolean include = true
+                    while (entries.hasMoreElements()){
+                        JarEntry jarEntry = entries.nextElement()
+                        String entryName = jarEntry.name
+                        String transEntryName = entryName.replace(File.separator,".")
+                        boolean exclude = excludeFile(ajExtension,transEntryName)
+                        if(exclude) {
+                            include = false
+                            break
+                        }
+                    }
+
+                    if(!include) {
+                        FileUtils.copyFile(jarInput.file,outputJar)
+                    }
+
+
                 }
-
-
             }
         }
+
 
     }
 
@@ -370,12 +373,15 @@ public class HyAjTransform extends Transform {
                         File cacheFile = new File(ajConstant.aspectPath + subPath)
                         switch (status) {
                             case Status.REMOVED:
+                                println("-----updateAspectClass----REMOVED---"+cacheFile)
                                 FileUtils.deleteQuietly(cacheFile)
                                 break
                             case Status.ADDED:
+                                println("-----updateAspectClass----ADDED---"+cacheFile)
                                 FileUtils.copyFile(file,cacheFile)
                                 break
                             case Status.CHANGED:
+                                println("-----updateAspectClass----CHANGED---"+cacheFile)
                                 FileUtils.deleteQuietly(cacheFile)
                                 FileUtils.copyFile(file,cacheFile)
                                 break
