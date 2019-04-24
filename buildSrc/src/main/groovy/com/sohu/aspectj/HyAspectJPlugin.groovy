@@ -9,20 +9,20 @@ import org.gradle.api.Project
 import org.gradle.api.tasks.compile.JavaCompile
 
 //gradleApi()中的Plugin
-class HyAspectj implements Plugin<Project> {
+class HyAspectJPlugin implements Plugin<Project> {
     @Override
     void apply(Project project) {
-        println("-------apply------")
         registerExtention(project)
         registerTransform(project)
-
-
-
-
-//        testAspectjProcess(project)
+//        troditionalAspectjProcess(project)
     }
 
-    private testAspectjProcess(Project project) {
+    /**
+     * 传统aspectj插件方式
+     * @param project
+     * @return
+     */
+    private troditionalAspectjProcess(Project project) {
         //gradle:3.2.1 中的AppExtension
         project.extensions.getByType(AppExtension).getApplicationVariants().all { variants ->
             JavaCompile javaCompiler = variants.javaCompiler
