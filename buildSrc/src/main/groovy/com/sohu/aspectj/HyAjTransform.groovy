@@ -10,29 +10,21 @@ import com.android.build.api.transform.Transform
 import com.android.build.api.transform.TransformException
 import com.android.build.api.transform.TransformInput
 import com.android.build.api.transform.TransformInvocation
-import com.android.build.gradle.AppExtension
-import com.android.build.gradle.AppPlugin
 import com.android.build.gradle.internal.pipeline.TransformManager
-import com.android.build.gradle.internal.pipeline.TransformTask
-import com.google.common.collect.ImmutableSet
 import com.google.common.io.ByteStreams
 import org.apache.commons.io.FileUtils
 import org.aspectj.bridge.IMessage
 import org.aspectj.bridge.MessageHandler
 import org.aspectj.tools.ajc.Main
-import org.gradle.api.Plugin
 import org.gradle.api.Project
-import org.gradle.api.plugins.BasePlugin
-import org.gradle.api.tasks.compile.JavaCompile
-import org.gradle.internal.impldep.com.esotericsoftware.kryo.util.ObjectMap
 
 import java.util.jar.JarEntry
 import java.util.jar.JarFile
 
 public class HyAjTransform extends Transform {
     static final TRANSFORM_NAME = "HyAjTransform"
-    static final AJ_DIRECTORY_INCLUDE = "aj_directory_include"
-    static final TRANS_DIRECTORY_EXCLUDE = "tr_directory_exclude"
+    static final ASPECTJ_WEAVE_DIRECTORY = "aj_directory_include"
+    static final EXCLUDE_DIRECTORY = "tr_directory_exclude"
     Project project
 
     HyAjTransform(Project project) {
@@ -63,15 +55,15 @@ public class HyAjTransform extends Transform {
 
     @Override
     void transform(TransformInvocation transformInvocation) throws TransformException, InterruptedException, IOException {
-//        System.setProperty("aspectj.multithreaded", "true")
-
-        testReuslt(transformInvocation)
+        setMultiThreadEnable()
         HyAjExtension ajExtension = project.extensions.getByType(HyAjExtension)
         HyAjConstant ajConstant = new HyAjConstant(project,transformInvocation.context.variantName)
         if(!ajExtension.enable){
             super.transform(transformInvocation)
             return
         }
+
+
         if(transformInvocation.incremental) {
             boolean hasAspect = updateAspectClass(transformInvocation,ajConstant)
             if(!hasAspect) {
@@ -82,7 +74,7 @@ public class HyAjTransform extends Transform {
             updateInputFiles(transformInvocation,ajConstant,ajExtension)
 
             if(ajConstant.aspectjClassChange||ajConstant.isIncludeFileChanged) {
-                File directoryDes = transformInvocation.outputProvider.getContentLocation(AJ_DIRECTORY_INCLUDE, ajConstant.directoryIncludeContentTypes, ajConstant.directoryIncludeScopes, Format.JAR)
+                File directoryDes = transformInvocation.outputProvider.getContentLocation(ASPECTJ_WEAVE_DIRECTORY, ajConstant.directoryIncludeContentTypes, ajConstant.directoryIncludeScopes, Format.JAR)
                 FileUtils.deleteQuietly(directoryDes)
                 ArrayList<String> inPath = new ArrayList<>()
                 inPath.add(ajConstant.includeFilePath)
@@ -102,7 +94,7 @@ public class HyAjTransform extends Transform {
             println("---------hasAspectClass----full-----")
             copyExcludeClass(transformInvocation,ajConstant,ajExtension)
 
-            File directoryDes = transformInvocation.outputProvider.getContentLocation(AJ_DIRECTORY_INCLUDE, ajConstant.directoryIncludeContentTypes, ajConstant.directoryIncludeScopes, Format.JAR)
+            File directoryDes = transformInvocation.outputProvider.getContentLocation(ASPECTJ_WEAVE_DIRECTORY, ajConstant.directoryIncludeContentTypes, ajConstant.directoryIncludeScopes, Format.JAR)
 
             if (!directoryDes.parentFile.exists()) {
                 FileUtils.forceMkdir(directoryDes.getParentFile())
@@ -125,6 +117,10 @@ public class HyAjTransform extends Transform {
 
 
         }
+    }
+
+    private String setMultiThreadEnable() {
+        System.setProperty("aspectj.multithreaded", "true")
     }
 
     private void doUpdateAspect(TransformInvocation transformInvocation,HyAjConstant ajConstant,HyAjExtension ajExtension) {
@@ -234,13 +230,13 @@ public class HyAjTransform extends Transform {
                     }
 
                     if(ajConstant.isIncludeFileChanged) {
-                        File directoryDes = transformInvocation.outputProvider.getContentLocation(AJ_DIRECTORY_INCLUDE, ajConstant.directoryIncludeContentTypes, ajConstant.directoryIncludeScopes, Format.JAR)
+                        File directoryDes = transformInvocation.outputProvider.getContentLocation(ASPECTJ_WEAVE_DIRECTORY, ajConstant.directoryIncludeContentTypes, ajConstant.directoryIncludeScopes, Format.JAR)
                         FileUtils.deleteQuietly(directoryDes)
                         println("---------deleteInclude-----------"+directoryDes)
                     }
 
                     if(ajConstant.isExcludeFileChanged) {
-                        File excludeJar = transformInvocation.getOutputProvider().getContentLocation(TRANS_DIRECTORY_EXCLUDE, ajConstant.directoryIncludeContentTypes,
+                        File excludeJar = transformInvocation.getOutputProvider().getContentLocation(EXCLUDE_DIRECTORY, ajConstant.directoryIncludeContentTypes,
                                 ajConstant.directoryIncludeScopes, Format.JAR)
                         FileUtils.deleteQuietly(excludeJar)
                         mergeJar(new File(ajConstant.excludeFilePath), excludeJar)
@@ -316,7 +312,7 @@ public class HyAjTransform extends Transform {
 
                 //put exclude files into jar
                 if (HyAjUtil.countOfFiles(new File(ajConstant.excludeFilePath)) > 0) {
-                    File excludeJar = transformInvocation.getOutputProvider().getContentLocation(TRANS_DIRECTORY_EXCLUDE, ajConstant.directoryIncludeContentTypes,
+                    File excludeJar = transformInvocation.getOutputProvider().getContentLocation(EXCLUDE_DIRECTORY, ajConstant.directoryIncludeContentTypes,
                             ajConstant.directoryIncludeScopes, Format.JAR)
                     mergeJar(new File(ajConstant.excludeFilePath), excludeJar)
                 }
