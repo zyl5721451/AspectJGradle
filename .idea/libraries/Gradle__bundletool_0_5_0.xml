@@ -1,9 +1,0 @@
-<component name="libraryTable">
-  <library name="Gradle: bundletool-0.5.0">
-    <CLASSES>
-      <root url="jar://$APPLICATION_HOME_DIR$/gradle/m2repository/com/android/tools/build/bundletool/0.5.0/bundletool-0.5.0.jar!/" />
-    </CLASSES>
-    <JAVADOC />
-    <SOURCES />
-  </library>
-</component>
