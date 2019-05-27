@@ -27,10 +27,15 @@ public class SampleAspect {
 
     }
 
-//    @Pointcut("execution(@com.sohu.aspectj.AspectLog public static final boolean com.sohu.aspectj.MainActivity.new(java.lang.String,boolean)throws java.lang.Exception)")
-//    public void activityInit() {
-//
-//    }
+    @Pointcut("execution(@com.sohu.aspectj.AspectLog public boolean com.sohu.aspectj.KotlinClassFile.test(java.lang.String,boolean))")
+    public void kotlinClasstest() {
+
+    }
+
+    @Pointcut("execution(public com.sohu.aspectj.KotlinClassFile.new(java.lang.String,boolean))")
+    public void kotlinClassInit() {
+
+    }
 
     //Fragment及其子类onCreate方法的调用
     @Pointcut("execution(public * android.support.v4.app.Fragment+.onCreate(..))")
@@ -44,10 +49,6 @@ public class SampleAspect {
 
     }
 
-    @Pointcut("execution(public * testParams(..)) && target(android.support.v4.app.Fragment+) && args(args)")
-    public void fragmentTesttargetParams(boolean args,Fragment fragment) {
-
-    }
     @Pointcut("execution(public * testParams(..)) && within(android.support.v4.app.Fragment+) && args(args)")
     public void fragmentWithTestParams(boolean args,Fragment fragment) {
 
@@ -69,16 +70,27 @@ public class SampleAspect {
     }
 
 
-
-
+//    @Around("activityOnCreate()")
+//    public Object activityOnCreateTime(ProceedingJoinPoint joinPoint) {
+//        Object object = null;
+//        long startTime = System.currentTimeMillis();
+//        try {
+//            object = joinPoint.proceed();
+//        } catch (Throwable throwable) {
+//            throwable.printStackTrace();
+//        }
+//        Log.d("chao","activityOnCreateTime:"+(System.currentTimeMillis() - startTime));
+//        return object;
+//
+//    }
 
 //    @Before("activityOnCreate()")
 //    public void onCreateBefore(JoinPoint joinPoint) {
-//        Log.d("chao", "onCreateAdvice" + joinPoint.getSignature().getDeclaringType() + ":" + joinPoint.getSignature().getDeclaringTypeName());
+//        Log.d("chao", "onCreateBefore" + joinPoint.getSignature().getDeclaringType() + ":" + joinPoint.getSignature().getDeclaringTypeName());
 //    }
 //    @After("activityOnCreate()")
 //    public void onCreateAfter(JoinPoint joinPoint) {
-//        Log.d("chao", "onCreateAdvice" + joinPoint.getSignature().getDeclaringType() + ":" + joinPoint.getSignature().getDeclaringTypeName());
+//        Log.d("chao", "onCreateAfter" + joinPoint.getSignature().getDeclaringType() + ":" + joinPoint.getSignature().getDeclaringTypeName());
 //    }
 //    @Around("activityOnCreate()")
 //    public Object onCreateAround(ProceedingJoinPoint proceedingJoinPoint) throws Throwable{
@@ -88,12 +100,16 @@ public class SampleAspect {
 
 //    @Before("activityIsFirst()")
 //    public void onCreateFirstBefore(JoinPoint joinPoint) {
-//        Log.d("chao", "onCreateAdvice" + joinPoint.getSignature().getDeclaringType() + ":" + joinPoint.getSignature().getDeclaringTypeName());
+//        Log.d("chao", "onCreateFirstBefore" + joinPoint.getSignature().getDeclaringType() + ":" + joinPoint.getSignature().getDeclaringTypeName());
 //    }
 //
-//    @Before("activityInit()")
+//    @Before("kotlinClasstest()")
 //    public void activityInitBefore(JoinPoint joinPoint) {
 //        Log.d("chao", "activityInitBefore" + joinPoint.getSignature().getDeclaringType() + ":" + joinPoint.getSignature().getDeclaringTypeName());
+//    }
+//    @Before("kotlinClassInit()")
+//    public void kotlinClassInitts(JoinPoint joinPoint) {
+//        Log.d("chao", "kotlinClassInitts" + joinPoint.getSignature().getDeclaringType() + ":" + joinPoint.getSignature().getDeclaringTypeName());
 //    }
 //
 //    @Before("fragmentOnCreate()")
@@ -104,12 +120,6 @@ public class SampleAspect {
 //    @Before("fragmentTestParams(args,fragment)")
 //    public void fragmentTestParams(JoinPoint joinPoint,boolean args,Fragment fragment) {
 //        Log.d("chao", "fragmentTestParams" + joinPoint.getSignature().getDeclaringType() + ":" + joinPoint.getSignature().getDeclaringTypeName()+":"+args);
-//
-//    }
-//
-//    @Before("fragmentWithTestParams(args,fragment)")
-//    public void fragmentWithinTestParams(JoinPoint joinPoint,boolean args,Fragment fragment) {
-//        Log.d("chao", "fragmentWithTestParams" + joinPoint.getSignature().getDeclaringType() + ":" + joinPoint.getSignature().getDeclaringTypeName()+":"+args);
 //
 //    }
 //

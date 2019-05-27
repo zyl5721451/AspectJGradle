@@ -30,12 +30,12 @@
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />
     <orderEntry type="library" exported="" name="Gradle: gradle-3.2.1" level="project" />
-    <orderEntry type="library" exported="" name="Gradle: lint-gradle-api-26.2.1" level="project" />
-    <orderEntry type="library" exported="" name="Gradle: gradle-api-3.2.1" level="project" />
     <orderEntry type="library" exported="" name="Gradle: builder-3.2.1" level="project" />
     <orderEntry type="library" exported="" name="Gradle: tracker-26.2.1" level="project" />
     <orderEntry type="library" exported="" name="Gradle: shared-26.2.1" level="project" />
     <orderEntry type="library" exported="" name="Gradle: crash-26.2.1" level="project" />
+    <orderEntry type="library" exported="" name="Gradle: lint-gradle-api-26.2.1" level="project" />
+    <orderEntry type="library" exported="" name="Gradle: gradle-api-3.2.1" level="project" />
     <orderEntry type="library" exported="" name="Gradle: databinding-compiler-common-3.2.1" level="project" />
     <orderEntry type="library" exported="" name="Gradle: manifest-merger-26.2.1" level="project" />
     <orderEntry type="library" exported="" name="Gradle: sdk-common-26.2.1" level="project" />
@@ -59,11 +59,8 @@
     <orderEntry type="library" exported="" name="Gradle: bundletool-0.5.0" level="project" />
     <orderEntry type="library" exported="" name="Gradle: jetifier-core-1.0.0-alpha10" level="project" />
     <orderEntry type="library" exported="" name="Gradle: builder-model-3.2.1" level="project" />
-    <orderEntry type="library" exported="" name="Gradle: apkzlib-3.2.1" level="project" />
-    <orderEntry type="library" exported="" name="Gradle: protobuf-java-util-3.4.0" level="project" />
-    <orderEntry type="library" exported="" name="Gradle: jimfs-1.1" level="project" />
-    <orderEntry type="library" exported="" name="Gradle: guava-23.0" level="project" />
     <orderEntry type="library" exported="" name="Gradle: protos-26.2.1" level="project" />
+    <orderEntry type="library" exported="" name="Gradle: apkzlib-3.2.1" level="project" />
     <orderEntry type="library" exported="" name="Gradle: apksig-3.2.1" level="project" />
     <orderEntry type="library" exported="" name="Gradle: javawriter-2.5.0" level="project" />
     <orderEntry type="library" exported="" name="Gradle: bcpkix-jdk15on-1.56" level="project" />
@@ -71,6 +68,9 @@
     <orderEntry type="library" exported="" name="Gradle: fastutil-7.2.0" level="project" />
     <orderEntry type="library" exported="" name="Gradle: json-simple-1.1" level="project" />
     <orderEntry type="library" exported="" name="Gradle: annotations-26.2.1" level="project" />
+    <orderEntry type="library" exported="" name="Gradle: protobuf-java-util-3.4.0" level="project" />
+    <orderEntry type="library" exported="" name="Gradle: jimfs-1.1" level="project" />
+    <orderEntry type="library" exported="" name="Gradle: guava-23.0" level="project" />
     <orderEntry type="library" exported="" name="Gradle: gson-2.8.0" level="project" />
     <orderEntry type="library" exported="" name="Gradle: httpmime-4.5.2" level="project" />
     <orderEntry type="library" exported="" name="Gradle: httpclient-4.5.2" level="project" />

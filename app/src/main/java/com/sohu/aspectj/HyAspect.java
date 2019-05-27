@@ -60,13 +60,13 @@ public class HyAspect {
         return result;
     }
 
-    @Around("method2() || constructor2()")
-    public Object logAndExecute2(ProceedingJoinPoint joinPoint) throws Throwable {
-        MethodSignature methodSignature = ((MethodSignature) joinPoint.getSignature());
-        AspectLog hyaspect = methodSignature.getMethod().getAnnotation(AspectLog.class);
-        String[] checkString = hyaspect.checkString();
-        Log.d("chao", "-----AspectLog2:needCheck:" + hyaspect.needCheck()+" checkCode:"+hyaspect.checkCode()+" checkString:"+checkString[0]);
-        Object result = joinPoint.proceed(); // 调用原来的方法
-        return result;
-    }
+//    @Around("method2() || constructor2()")
+//    public Object logAndExecute2(ProceedingJoinPoint joinPoint) throws Throwable {
+//        MethodSignature methodSignature = ((MethodSignature) joinPoint.getSignature());
+//        AspectLog hyaspect = methodSignature.getMethod().getAnnotation(AspectLog.class);
+//        String[] checkString = hyaspect.checkString();
+//        Log.d("chao", "-----AspectLog2:needCheck:" + hyaspect.needCheck()+" checkCode:"+hyaspect.checkCode()+" checkString:"+checkString[0]);
+//        Object result = joinPoint.proceed(); // 调用原来的方法
+//        return result;
+//    }
 }

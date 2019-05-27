@@ -37,6 +37,7 @@ public class MainActivity extends AppCompatActivity {
         }
 
 
+        new KotlinClassFile("oncreate",true).test("oncreate",true);
 
     }
 
